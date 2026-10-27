@@ -3,7 +3,7 @@
 
 <head>
     <title>{% block title %}Automonous{% endblock %}</title>
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
@@ -18,8 +18,8 @@
     <nav class="sidebar">
         <div>
             <a class="brand" href="/">
-                <div class="brand-mark" style="background:transparent; box-shadow:none; padding:0;">
-                    <img src="{{ url_for('static', filename='logo.png') }}" alt="Automonous" style="width:32px; height:32px; object-fit:contain;">
+                <div class="brand-mark" style="background:transparent; box-shadow:none; padding:0; width:44px; height:44px;">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="Automonous" style="width:44px; height:44px; object-fit:contain;">
                 </div>
                 <div class="brand-text">
                     <strong>Automonous</strong>
