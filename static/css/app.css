@@ -54,7 +54,10 @@ body {
   border-right: 1px solid #064e3b;
   overflow-y: auto;
   z-index: 20;
+  color: #ffffff;
 }
+
+.sidebar .version-pill { color: #ffffff; }
 
 .sidebar .brand {
   display: flex;
