@@ -127,7 +127,7 @@ The bundled app never needs the repo's `venv`:
 
 ## Updates
 
-- The app checks GitHub (`palashsuryavanshi/Automonous`) on the background for
+- The app checks GitHub (`palashsuryavanshi/automonous`) on the background for
   the latest release.
 - When a newer version exists, the web app shows a popup on every page with a
   "Download Installer" link (shown once per browser session).

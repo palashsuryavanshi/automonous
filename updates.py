@@ -13,7 +13,7 @@ from pathlib import Path
 
 APP_VERSION = "0.3"
 
-GITHUB_REPO = "palashsuryavanshi/Automonous"
+GITHUB_REPO = "palashsuryavanshi/automonous"
 RELEASES_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 
 UA = "Mozilla/5.0 (Automonous updater)"
