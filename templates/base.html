@@ -18,7 +18,9 @@
     <nav class="sidebar">
         <div>
             <a class="brand" href="/">
-                <div class="brand-mark">A</div>
+                <div class="brand-mark" style="background:transparent; box-shadow:none; padding:0;">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="Automonous" style="width:32px; height:32px; object-fit:contain;">
+                </div>
                 <div class="brand-text">
                     <strong>Automonous</strong>
                     <span>Tax Automation Portal</span>
