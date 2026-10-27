@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Automonous Server Console</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0a0a0a; color: #f5f5f5; font-family: 'Segoe UI', system-ui, sans-serif; }
+  .app { min-height: 100vh; padding: 16px; }
+  .card { background: #171717; border: 1px solid #262626; border-radius: 12px; }
+  .banner { padding: 16px; margin-bottom: 16px; }
+  .title { font-size: 14px; font-weight: 700; letter-spacing: 0.08em; font-family: Consolas, monospace; }
+  .sub { font-size: 12px; color: #a3a3b3; margin-top: 4px; }
+  .status-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 6px; font-family: Consolas, monospace; font-size: 11px; font-weight: 700; }
+  .status-running { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.35); }
+  .status-stopped { background: #262626; color: #737373; border: 1px solid #3a3a3a; }
+  .feedback { font-family: Consolas, monospace; font-size: 12px; color: #10b981; }
+  .controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  .btn { border: 0; border-radius: 8px; padding: 10px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: Consolas, monospace; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-green { background: #10b981; color: #0a0a0a; }
+  .btn-red { background: #f43f5e; color: #fff; }
+  .btn-gray { background: #262626; color: #e5e5e5; border: 1px solid #3a3a3a; }
+  .btn-amber { background: #f59e0b; color: #0a0a0a; }
+  .urlbar { padding: 10px 14px; margin-bottom: 16px; font-family: Consolas, monospace; font-size: 12px; color: #a3a3b3; }
+  .urlbar code { color: #10b981; font-weight: 700; }
+  .split { display: grid; grid-template-columns: 380px 1fr; gap: 16px; }
+  .panel { padding: 14px; }
+  .panel-title { font-family: Consolas, monospace; font-size: 11px; font-weight: 700; color: #f5f5f5; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .panel-sub { font-size: 12px; color: #a3a3b3; margin-bottom: 12px; line-height: 1.5; }
+  .backup-item { padding: 10px; border-radius: 8px; border: 1px solid #262626; background: #0a0a0a; margin-bottom: 8px; cursor: pointer; font-family: Consolas, monospace; font-size: 11px; }
+  .backup-item.selected { border-color: rgba(245,158,11,0.6); background: #1f1f1f; box-shadow: 0 0 0 1px rgba(245,158,11,0.3); }
+  .backup-name { color: #f5f5f5; font-weight: 600; }
+  .backup-meta { color: #737373; margin-top: 4px; }
+  .env { font-family: Consolas, monospace; font-size: 11px; color: #a3a3b3; line-height: 1.7; }
+  .env .label { color: #737373; }
+  .logbox { background: #000; border: 1px solid #262626; border-radius: 8px; padding: 12px; height: 420px; overflow-y: auto; font-family: Consolas, monospace; font-size: 11px; color: #d4d4d8; line-height: 1.6; }
+  .logline { padding: 2px 4px; border-radius: 4px; }
+  .logline:hover { background: rgba(255,255,255,0.04); }
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: #171717; border: 1px solid #3a3a3a; border-radius: 12px; padding: 20px; width: 420px; max-width: 90vw; }
+  .modal h3 { margin: 0 0 10px; font-size: 15px; color: #f59e0b; display: flex; align-items: center; gap: 8px; }
+  .modal p { font-size: 12px; color: #a3a3b3; line-height: 1.6; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+  .btn-cancel { background: transparent; color: #a3a3b3; }
+  .small-btn { padding: 4px 8px; font-size: 10px; border-radius: 6px; background: #262626; color: #a3a3b3; border: 1px solid #3a3a3a; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Top banner -->
+  <div class="card banner">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+      <div>
+        <div class="title">AUTOMONOUS CONTROL PANEL (GUI CONSOLE)</div>
+        <div class="sub">Host process supervisor, Flask runtime server, and encrypted credential backup manager.</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span id="statusBadge" class="status-badge status-stopped">STOPPED</span>
+        <span id="feedback" class="feedback"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button id="btnStart" class="btn btn-green" onclick="startServer()">Start Server</button>
+    <button id="btnStop" class="btn btn-red" onclick="stopServer()">Stop Server</button>
+    <button id="btnBrowser" class="btn btn-gray" onclick="openBrowser()">Open Browser</button>
+    <button id="btnBackup" class="btn btn-gray" onclick="createBackup()">Backup Store</button>
+  </div>
+
+  <!-- URL bar -->
+  <div class="card urlbar">
+    Serving at: <code id="urlText">http://127.0.0.1:5000/</code> &nbsp; Port: <code>5000 (TAX_PORT)</code>
+  </div>
+
+  <!-- Split -->
+  <div class="split">
+    <!-- Left -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="card panel">
+        <div class="panel-title">
+          <span>Encrypted Backups (backups/)</span>
+          <span id="backupCount" style="color:#737373;font-size:10px;">0 Available</span>
+        </div>
+        <div class="panel-sub">Backups store zipped archives of <code>credentials.enc</code>, <code>.secrets/master.key</code>, and <code>secret.key</code>.</div>
+        <div id="backupList" style="max-height:300px;overflow-y:auto;margin-bottom:12px;"></div>
+        <button id="btnRestore" class="btn btn-amber" style="width:100%;" onclick="confirmRestore()">Restore Selected</button>
+      </div>
+
+      <div class="card panel">
+        <div class="panel-title"><span>Environment &amp; Paths</span></div>
+        <div class="env">
+          <div><span class="label">BASE_DIR: </span><span id="baseDir"></span></div>
+          <div><span class="label">PID_FILE: </span>.server.pid</div>
+          <div><span class="label">LOG_FILE: </span>server.log</div>
+          <div><span class="label">ENGINE: </span><span style="color:#10b981;">System Chrome/Edge (Stealth)</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right -->
+    <div class="card panel">
+      <div class="panel-title">
+        <span>server.log Output Tail</span>
+        <button class="small-btn" onclick="clearLogs()">Clear</button>
+      </div>
+      <div id="logBox" class="logbox"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Restore modal -->
+<div id="restoreModal" class="modal-backdrop">
+  <div class="modal">
+    <h3><span style="color:#f59e0b;">⚠</span> Confirm Credential Restore</h3>
+    <p>Restoring <strong id="restoreName" style="color:#f5f5f5;font-family:Consolas,monospace;"></strong> will overwrite current <code>credentials.enc</code> and encryption keys.</p>
+    <p style="margin-top:8px;font-size:11px;color:#737373;font-family:Consolas,monospace;">The web server will be stopped automatically before archive extraction and restarted afterwards.</p>
+    <div class="modal-actions">
+      <button class="btn btn-gray" onclick="closeRestore()">Cancel</button>
+      <button class="btn btn-amber" onclick="doRestore()">Proceed &amp; Restore</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let selectedBackup = null;
+  let state = {};
+
+  async function api(method, ...args) {
+    return await window.pywebview.api[method](...args);
+  }
+
+  function showFeedback(msg) {
+    const el = document.getElementById('feedback');
+    el.textContent = msg;
+    setTimeout(() => { el.textContent = ''; }, 3500);
+  }
+
+  async function refresh() {
+    try {
+      state = await api('get_state');
+      renderState();
+    } catch (e) {}
+  }
+
+  function renderState() {
+    const badge = document.getElementById('statusBadge');
+    if (state.isRunning) {
+      badge.textContent = 'RUNNING (PID ' + (state.pid || '') + ')';
+      badge.className = 'status-badge status-running';
+    } else {
+      badge.textContent = 'STOPPED';
+      badge.className = 'status-badge status-stopped';
+    }
+    document.getElementById('btnStart').disabled = state.isRunning;
+    document.getElementById('btnStop').disabled = !state.isRunning;
+    document.getElementById('btnBrowser').disabled = !state.isRunning;
+    document.getElementById('urlText').textContent = state.url || 'http://127.0.0.1:5000/';
+    document.getElementById('baseDir').textContent = state.baseDir || '';
+
+    // backups
+    const list = document.getElementById('backupList');
+    list.innerHTML = '';
+    const backups = state.backups || [];
+    document.getElementById('backupCount').textContent = backups.length + ' Available';
+    backups.forEach((b) => {
+      const div = document.createElement('div');
+      div.className = 'backup-item' + (selectedBackup === b.filename ? ' selected' : '');
+      div.onclick = () => { selectedBackup = b.filename; renderState(); };
+      div.innerHTML = '<div class="backup-name">' + b.filename + '</div>' +
+        '<div class="backup-meta">' + b.timestamp + ' &nbsp; ' + (b.sizeBytes/1024).toFixed(1) + ' KB</div>';
+      list.appendChild(div);
+    });
+
+    // logs
+    const logBox = document.getElementById('logBox');
+    const logs = state.logs || [];
+    logBox.innerHTML = logs.map(l => '<div class="logline">' + escapeHtml(l) + '</div>').join('');
+    logBox.scrollTop = logBox.scrollHeight;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function startServer() {
+    const msg = await api('start_server');
+    showFeedback(msg);
+    await refresh();
+  }
+  async function stopServer() {
+    const msg = await api('stop_server');
+    showFeedback(msg);
+    await refresh();
+  }
+  async function openBrowser() {
+    await api('open_browser');
+  }
+  async function createBackup() {
+    const msg = await api('create_backup');
+    showFeedback(msg);
+    await refresh();
+  }
+  function confirmRestore() {
+    if (!selectedBackup) { showFeedback('Select a backup first.'); return; }
+    document.getElementById('restoreName').textContent = selectedBackup;
+    document.getElementById('restoreModal').classList.add('open');
+  }
+  function closeRestore() {
+    document.getElementById('restoreModal').classList.remove('open');
+  }
+  async function doRestore() {
+    closeRestore();
+    const msg = await api('restore_backup', selectedBackup);
+    showFeedback(msg);
+    await refresh();
+  }
+  async function clearLogs() {
+    await api('clear_logs');
+    await refresh();
+  }
+
+  window.addEventListener('pywebviewready', () => {
+    refresh();
+    setInterval(refresh, 2000);
+  });
+</script>
+</body>
+</html>
