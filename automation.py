@@ -1,18 +1,88 @@
 import os
 import sys
 import time
-from pathlib import Path
-
-_BROWSERS_BASE = (
-    Path(getattr(sys, "_MEIPASS", Path(sys.executable).parent))
-    if getattr(sys, "frozen", False)
-    else Path(__file__).parent
-)
-_BUNDLED_BROWSERS = _BROWSERS_BASE / "browsers"
-if _BUNDLED_BROWSERS.is_dir():
-    os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(_BUNDLED_BROWSERS))
-
 from playwright.sync_api import sync_playwright
+
+# System browsers we prefer over a bundled Chromium. Microsoft Edge ships with
+# every Windows install, so it is the ultimate fallback.
+PREFERRED_BROWSER_CHANNELS = ["chrome", "msedge"]
+
+
+def _find_system_browser_executable():
+    """Best-effort discovery of an installed Chrome/Edge binary on Windows."""
+    candidates = []
+
+    local_app = os.environ.get("LOCALAPPDATA", "")
+    candidates.append(os.path.join(local_app, "Google", "Chrome", "Application", "chrome.exe"))
+
+    for base in (
+        r"C:\Program Files\Google\Chrome\Application",
+        r"C:\Program Files (x86)\Google\Chrome\Application",
+    ):
+        candidates.append(os.path.join(base, "chrome.exe"))
+
+    for base in (
+        r"C:\Program Files\Microsoft\Edge\Application",
+        r"C:\Program Files (x86)\Microsoft\Edge\Application",
+    ):
+        candidates.append(os.path.join(base, "msedge.exe"))
+
+    # Edge is sometimes installed under a versioned EdgeCore directory.
+    edge_core = r"C:\Program Files (x86)\Microsoft\EdgeCore"
+    if os.path.isdir(edge_core):
+        try:
+            versions = sorted(os.listdir(edge_core), reverse=True)
+        except OSError:
+            versions = []
+        for version in versions:
+            candidates.append(os.path.join(edge_core, version, "msedge.exe"))
+
+    for candidate in candidates:
+        if candidate and os.path.isfile(candidate):
+            return candidate
+    return None
+
+
+def _launch_browser(playwright):
+    """Launch a system Chrome/Edge browser, falling back to Playwright Chromium."""
+    last_error = None
+    for channel in PREFERRED_BROWSER_CHANNELS:
+        try:
+            browser = playwright.chromium.launch(
+                channel=channel,
+                headless=False,
+                args=BROWSER_ARGS,
+            )
+            print(f"Launched system browser via Playwright channel: {channel}")
+            return browser
+        except Exception as exc:  # pragma: no cover - depends on host
+            last_error = exc
+            print(f"Could not launch '{channel}': {exc}")
+
+    executable = _find_system_browser_executable()
+    if executable:
+        try:
+            browser = playwright.chromium.launch(
+                executable_path=executable,
+                headless=False,
+                args=BROWSER_ARGS,
+            )
+            print(f"Launched system browser from: {executable}")
+            return browser
+        except Exception as exc:  # pragma: no cover - depends on host
+            last_error = exc
+            print(f"Could not launch '{executable}': {exc}")
+
+    # Last resort: Playwright's own Chromium (only if installed).
+    try:
+        browser = playwright.chromium.launch(headless=False, args=BROWSER_ARGS)
+        print("Launched Playwright-bundled Chromium (fallback).")
+        return browser
+    except Exception as exc:
+        raise RuntimeError(
+            "No usable browser found. Install Google Chrome or Microsoft Edge "
+            "(Edge ships with Windows)."
+        ) from (last_error or exc)
 
 
 CAPTCHA_SCRIPT = """
@@ -190,10 +260,7 @@ def run_login(tool, username, password):
     print(f"Starting automatic login for {tool['name']}...")
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=False,
-            args=BROWSER_ARGS,
-        )
+        browser = _launch_browser(p)
         context = browser.new_context()
         context.add_init_script(STEALTH_SCRIPT)
         page = context.new_page()

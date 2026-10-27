@@ -1,6 +1,6 @@
-"""tkinter GUI for the CA Forge server console.
+"""tkinter GUI for the Automonous server console.
 
-Ship with PyInstaller:  pyinstaller --onefile --windowed --name CAForge gui_console.py
+Ship with PyInstaller:  pyinstaller --onefile --windowed --name Automonous gui_console.py
 Reuses the actions from server_console.py (start/stop/status/backup/restore).
 """
 
@@ -48,7 +48,7 @@ def _apply_icon(root):
 class ServerConsoleGUI:
     def __init__(self, root):
         self.root = root
-        root.title("CA Forge - Server Console")
+        root.title("Automonous - Server Console")
         root.geometry("420x320")
         root.resizable(True, True)
 
@@ -71,7 +71,7 @@ class ServerConsoleGUI:
         header.pack(fill="x", pady=(0, 12))
 
         ttk.Label(
-            header, text="CA Forge",
+            header, text="Automonous",
             font=("Segoe UI", 14, "bold"),
         ).pack(side="left")
 
@@ -259,7 +259,7 @@ class ServerConsoleGUI:
     def _exe_target(self):
         if getattr(sys, "frozen", False):
             return str(Path(sys.executable).absolute())
-        local = Path(__file__).parent / "CAForge.exe"
+        local = Path(__file__).parent / "Automonous.exe"
         if local.exists():
             return str(local)
         return None
@@ -269,9 +269,9 @@ class ServerConsoleGUI:
         if target is None:
             messagebox.showwarning(
                 "Shortcut",
-                "Run the built CAForge.exe instead of the script to "
+                "Run the built Automonous.exe instead of the script to "
                 "create a shortcut.\n\nBuild it with:\n"
-                "pyinstaller --onefile --windowed --name CAForge gui_console.py",
+                "pyinstaller --onefile --windowed --name Automonous gui_console.py",
             )
             return
 
@@ -281,12 +281,12 @@ class ServerConsoleGUI:
         script = (
             "$ws = New-Object -ComObject WScript.Shell;"
             "$d = [Environment]::GetFolderPath('Desktop');"
-            "$s = $ws.CreateShortcut($d + '\\CA Forge.lnk');"
+            "$s = $ws.CreateShortcut($d + '\\Automonous.lnk');"
             f"$s.TargetPath = '{escaped_target}';"
             "$s.Arguments = '--launch';"
             f"$s.WorkingDirectory = '{escaped_workdir}';"
             f"$s.IconLocation = '{escaped_target},0';"
-            "$s.Description = 'Start the CA Forge web app and open it "
+            "$s.Description = 'Start the Automonous web app and open it "
             "in the browser';"
             "$s.Save(); Write-Output 'ok'"
         )
@@ -345,7 +345,7 @@ class ServerConsoleGUI:
     def _ask_download(self, info):
         answer = messagebox.askyesno(
             "Update available",
-            f"CA Forge {info['version']} is available.\n"
+            f"Automonous {info['version']} is available.\n"
             f"Current version: {updates.APP_VERSION}\n\n"
             "Download and install now?\n"
             "The server and console will close to apply the update.",
@@ -442,7 +442,7 @@ def _launch_server():
             try:
                 app = tk.Tk()
                 app.withdraw()
-                messagebox.showerror("CA Forge", msg, parent=app)
+                messagebox.showerror("Automonous", msg, parent=app)
                 app.destroy()
             except Exception:
                 pass
@@ -467,7 +467,7 @@ def _serve_only():
         try:
             app = tk.Tk()
             app.withdraw()
-            messagebox.showerror("CA Forge", msg, parent=app)
+            messagebox.showerror("Automonous", msg, parent=app)
             app.destroy()
         except Exception:
             pass

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Utilities | Automonous{% endblock %}
+
+{% block content %}
+
+<h1 style="color:#0e4d3b;">Utilities</h1>
+<p>Lightweight helpers for everyday CA calculations and conversions.</p>
+
+<div class="grid" style="display:flex; flex-wrap:wrap; gap:20px;">
+
+    {% for tool in tools %}
+
+    <a class="card" href="/utilities/{{ tool.key }}"
+       style="width:280px; text-decoration:none; color:inherit;
+              border-top:5px solid #ff9800;">
+        <h2 style="color:#ff9800;">{{ tool.name }}</h2>
+        <p>{{ tool.description }}</p>
+        <span class="badge"
+              style="background:#f0f0f0; border:1px solid #ddd;
+                     border-radius:20px; padding:4px 12px; font-size:13px;
+                     color:#ff9800;">
+            {{ tool.status }}
+        </span>
+    </a>
+
+    {% endfor %}
+
+    {% if not tools %}
+
+    <div class="card" style="width:100%;">
+        <p>No utilities available yet.</p>
+    </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}PDF to Word | Automonous{% endblock %}
+
+{% block content %}
+
+<h1 style="color:#ff9800;">PDF to Word</h1>
+<p>
+    Upload a PDF. Automonous runs OCR on every page (so scanned documents work)
+    and converts the OCR'd result into a .docx file.
+</p>
+
+<div class="card" style="margin-bottom:20px;">
+    <label for="fileInput">PDF file</label>
+    <input type="file" id="fileInput" accept="application/pdf">
+
+    <p style="margin-top:10px; color:#666; font-size:13px;">
+        OCR is performed locally with Tesseract. Large PDFs may take a while.
+    </p>
+</div>
+
+<div class="card">
+    <button class="btn btn-dark" id="convertBtn" disabled style="width:100%;">
+        Convert to Word
+    </button>
+    <p id="status" style="margin-top:10px; font-size:13px; color:#444;"></p>
+</div>
+
+<script>
+(function () {
+    const fileInput = document.getElementById('fileInput');
+    const convertBtn = document.getElementById('convertBtn');
+    const status = document.getElementById('status');
+
+    let selectedFile = null;
+
+    fileInput.addEventListener('change', function () {
+        selectedFile = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+        convertBtn.disabled = !selectedFile;
+        status.textContent = selectedFile ? 'Ready to convert: ' + selectedFile.name : '';
+        status.style.color = '#444';
+    });
+
+    convertBtn.addEventListener('click', async function () {
+        if (!selectedFile) return;
+
+        convertBtn.disabled = true;
+        status.textContent = 'Running OCR and building the Word file...';
+        status.style.color = '#444';
+
+        const formData = new FormData();
+        formData.append('file', selectedFile, selectedFile.name);
+
+        try {
+            const response = await fetch('/utilities/pdf_to_word/convert', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                let message = 'Conversion failed.';
+                try {
+                    const data = await response.json();
+                    if (data && data.error) message = data.error;
+                } catch (e) {}
+                throw new Error(message);
+            }
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = (selectedFile.name.replace(/\.pdf$/i, '') || 'converted') + '.docx';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+
+            status.textContent = 'Word document downloaded.';
+            status.style.color = '#2e7d32';
+        } catch (err) {
+            status.textContent = err.message || 'Conversion failed.';
+            status.style.color = '#b71c1c';
+        } finally {
+            convertBtn.disabled = !selectedFile;
+        }
+    });
+})();
+</script>
+
+{% endblock %}

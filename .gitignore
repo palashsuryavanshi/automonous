@@ -8,8 +8,10 @@ secret.key
 dist/
 build/
 installer/
-CAForge.exe
-CAForgeConsole.exe
+Automonous.exe
+AutomonousConsole.exe
 server.log
 .server.pid
 backups/
+project_milestone.md
+project_milestone.md

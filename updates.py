@@ -1,4 +1,4 @@
-"""Update check and installer download for CA Forge.
+"""Update check and installer download for Automonous.
 
 Fetches the latest GitHub release, compares it with the locally running
 version, and can download the new installer. Uses only the stdlib so it
@@ -11,12 +11,12 @@ import threading
 import urllib.request
 from pathlib import Path
 
-APP_VERSION = "0.2"
+APP_VERSION = "0.3"
 
-GITHUB_REPO = "palashsuryavanshi/CA-Forge"
+GITHUB_REPO = "palashsuryavanshi/Automonous"
 RELEASES_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 
-UA = "Mozilla/5.0 (CA Forge updater)"
+UA = "Mozilla/5.0 (Automonous updater)"
 
 REFRESH_INTERVAL = 3600  # seconds between web-app checks
 
@@ -100,7 +100,7 @@ def download_installer(url, dest_dir, on_progress=None):
     dest_dir = Path(dest_dir)
     dest_dir.mkdir(parents=True, exist_ok=True)
 
-    name = os.path.basename(url.split("?")[0]) or "CAForge-Setup.exe"
+    name = os.path.basename(url.split("?")[0]) or "Automonous-Setup.exe"
     target = dest_dir / name
 
     req = urllib.request.Request(url, headers={"User-Agent": UA})

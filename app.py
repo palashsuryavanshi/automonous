@@ -1,5 +1,6 @@
 import secrets
 import sys
+from io import BytesIO
 from pathlib import Path
 
 from flask import (
@@ -10,6 +11,7 @@ from flask import (
     redirect,
     render_template,
     request,
+    send_file,
     url_for,
 )
 
@@ -17,6 +19,10 @@ from automation import run_login_in_thread
 from importer import build_template, parse_import
 from storage import add_credential, get_credential, load_credentials, remove_credential
 from tools import TOOLS, get_tool
+from automation_tools import AUTOMATION_TOOLS, get_automation_tool, list_automation_tools
+from utilities import UTILITIES, get_utility, list_utilities
+from pdf_tools import OcrError, pdf_to_docx
+from pypdf import PdfReader, PdfWriter
 import updates
 
 updates.start_background_refresh()
@@ -33,6 +39,7 @@ app = Flask(
     static_folder=str(_BASE_DIR / "static"),
 )
 app.secret_key = secrets.token_hex(16)
+app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024
 
 
 @app.route("/template")
@@ -105,6 +112,16 @@ def api_update_check():
 @app.context_processor
 def inject_tools():
     return {"TOOLS": TOOLS}
+
+
+@app.context_processor
+def inject_automation_tools():
+    return {"AUTOMATION_TOOLS": AUTOMATION_TOOLS}
+
+
+@app.context_processor
+def inject_utilities():
+    return {"UTILITIES": UTILITIES}
 
 
 @app.route("/")
@@ -226,6 +243,114 @@ def login_run(tool_key):
         run_login_in_thread(config, *credentials)
 
     return redirect(url_for("tool_page", tool_key=tool_key))
+
+
+@app.route("/automation")
+def automation_hub():
+    tools = list_automation_tools()
+    return render_template(
+        "automation.html",
+        tools=tools,
+        active="automation",
+    )
+
+
+@app.route("/automation/<tool_key>")
+def automation_tool_page(tool_key):
+    tool = get_automation_tool(tool_key)
+    if not tool:
+        abort(404)
+    return render_template(
+        "automation_tool.html",
+        tool=tool,
+        active="automation",
+    )
+
+
+@app.route("/utilities")
+def utilities_hub():
+    tools = list_utilities()
+    return render_template(
+        "utilities.html",
+        tools=tools,
+        active="utilities",
+    )
+
+
+@app.route("/utilities/<tool_key>")
+def utility_page(tool_key):
+    tool = get_utility(tool_key)
+    if not tool:
+        abort(404)
+
+    if tool_key == "pdf_merge":
+        return render_template("pdf_merge.html", tool=tool, active="utilities")
+
+    if tool_key == "pdf_to_word":
+        return render_template("pdf_to_word.html", tool=tool, active="utilities")
+
+    return render_template(
+        "utility.html",
+        tool=tool,
+        active="utilities",
+    )
+
+
+@app.route("/utilities/pdf_merge/merge", methods=["POST"])
+def pdf_merge_run():
+    files = request.files.getlist("files")
+
+    if not files or all(not f.filename for f in files):
+        return {"error": "Please choose at least one PDF file."}, 400
+
+    writer = PdfWriter()
+
+    try:
+        for uploaded in files:
+            if not uploaded or not uploaded.filename:
+                continue
+            reader = PdfReader(uploaded.stream)
+            for page in reader.pages:
+                writer.add_page(page)
+    except Exception as exc:
+        return {"error": f"Could not read one of the PDFs: {exc}"}, 400
+
+    buffer = BytesIO()
+    writer.write(buffer)
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name="merged.pdf",
+    )
+
+
+@app.route("/utilities/pdf_to_word/convert", methods=["POST"])
+def pdf_to_word_run():
+    uploaded = request.files.get("file")
+
+    if not uploaded or not uploaded.filename:
+        return {"error": "Please choose a PDF file."}, 400
+
+    try:
+        docx_bytes, _ocr_pdf = pdf_to_docx(uploaded.read())
+    except OcrError as exc:
+        return {"error": str(exc)}, 400
+    except Exception as exc:
+        return {"error": f"Conversion failed: {exc}"}, 500
+
+    filename = Path(uploaded.filename).stem or "converted"
+    return send_file(
+        BytesIO(docx_bytes),
+        mimetype=(
+            "application/vnd.openxmlformats-officedocument."
+            "wordprocessingml.document"
+        ),
+        as_attachment=True,
+        download_name=f"{filename}.docx",
+    )
 
 
 if __name__ == "__main__":

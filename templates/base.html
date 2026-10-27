@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>{% block title %}CA Forge{% endblock %}</title>
+    <title>{% block title %}Automonous{% endblock %}</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -239,7 +239,7 @@
     <nav class="sidebar">
         <a class="brand" href="/">
             <img src="{{ url_for('static', filename='logo-name.png') }}"
-                 alt="CA Forge">
+                 alt="Automonous">
         </a>
 
         <div class="group-label">Features</div>
@@ -259,6 +259,20 @@
         </a>
 
         {% endfor %}
+
+        <div class="group-label">Automation Tools</div>
+
+        <a class="nav-item {% if active == 'automation' %}active{% endif %}"
+           href="/automation">
+            Automation Tools
+        </a>
+
+        <div class="group-label">Utilities</div>
+
+        <a class="nav-item {% if active == 'utilities' %}active{% endif %}"
+           href="/utilities">
+            Utilities
+        </a>
     </nav>
 
     <main class="content">
@@ -272,7 +286,7 @@
     <div class="update-card">
         <button class="close" onclick="document.getElementById('updateModal').hidden = true;">&times;</button>
         <span class="badge-new">New version</span>
-        <h3>CA Forge {{ UPDATE.latest.version }} is available</h3>
+        <h3>Automonous {{ UPDATE.latest.version }} is available</h3>
         <p>{{ UPDATE.latest.body or 'A new release is ready to install.' }}</p>
         <div class="update-actions">
             <a class="btn btn-dark" target="_blank" rel="noopener"
@@ -285,8 +299,8 @@
 <script>
     (function () {
         var available = {{ 'true' if UPDATE.available else 'false' }};
-        if (available && !sessionStorage.getItem('caforge-update-seen')) {
-            sessionStorage.setItem('caforge-update-seen', '1');
+        if (available && !sessionStorage.getItem('Automonous-update-seen')) {
+            sessionStorage.setItem('Automonous-update-seen', '1');
             document.getElementById('updateModal').hidden = false;
         }
     })();

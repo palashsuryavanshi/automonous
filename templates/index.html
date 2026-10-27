@@ -13,6 +13,20 @@
         <p>Add, view, and delete saved accounts for all tax portals.</p>
     </a>
 
+    <a class="card" href="/automation"
+       style="width:280px; text-decoration:none; color:inherit;
+              border-top:5px solid #0c8599;">
+        <h2 style="color:#0c8599;">Automation Tools</h2>
+        <p>Helpers for repetitive CA workflows (coming soon).</p>
+    </a>
+
+    <a class="card" href="/utilities"
+       style="width:280px; text-decoration:none; color:inherit;
+              border-top:5px solid #ff9800;">
+        <h2 style="color:#ff9800;">Utilities</h2>
+        <p>Calculators and converters for everyday CA tasks (coming soon).</p>
+    </a>
+
     {% for tool in tools %}
 
     <a class="card" href="/tool/{{ tool.key }}"

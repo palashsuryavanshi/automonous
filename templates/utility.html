@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tool.name }} | Automonous{% endblock %}
+
+{% block content %}
+
+<h1 style="color:#ff9800;">{{ tool.name }}</h1>
+<p>{{ tool.description }}</p>
+
+<div class="card">
+    <h2>Status: {{ tool.status }}</h2>
+    <p>
+        This utility is not implemented yet. It will run entirely on your
+        machine when available.
+    </p>
+    <p>
+        <a href="/utilities">Back to Utilities</a>
+    </p>
+</div>
+
+{% endblock %}

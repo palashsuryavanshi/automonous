@@ -1,4 +1,4 @@
-# CA Forge
+# Automonous
 
 Local Flask app that manages credentials for government tax portals (GST, Income Tax, Income Tax TDS) and automates login into those portals using Playwright.
 
@@ -10,9 +10,10 @@ Credentials are stored encrypted at rest (Fernet) with an ACL-restricted key, so
 - **Automated login** - Playwright drives the browser through the portal login, including two-step ePortal flows and captcha detection.
 - **Encrypted credential store** - AES encryption via `cryptography` (Fernet); a backup key is kept as a fallback.
 - **Bulk import** - Load credentials from an `.xlsx` file, with a downloadable template (Portal, Username, Password).
+- **Utilities** - Local helpers, currently PDF Merger and PDF to Word (OCR).
 - **Server consoles** - Two launchers to run the app and manage backups:
-  - `CAForge.exe` - graphical control panel (start/stop, backup/restore, live log).
-  - `CAForgeConsole.exe` - menu-driven command-line version.
+  - `Automonous.exe` - graphical control panel (start/stop, backup/restore, live log).
+  - `AutomonousConsole.exe` - menu-driven command-line version.
 - **Backup & restore** - One-click zipped backups of the encrypted store plus keys, with validated restore.
 
 ## Project structure
@@ -40,8 +41,15 @@ requirements.txt   Python dependencies
 python -m venv venv
 venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-playwright install chromium
 ```
+
+No browser download is required: Automonous drives the Google Chrome or
+Microsoft Edge already installed on the machine (Edge ships with Windows).
+
+For **PDF to Word** OCR, install
+[Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki). Automonous looks
+for it in the standard `C:\Program Files\Tesseract-OCR\` location, or set the
+`TESSERACT_CMD` environment variable.
 
 ## Running the app
 
@@ -55,10 +63,10 @@ Then open http://127.0.0.1:5000/
 
 ### GUI console
 
-Build (or use the prebuilt `CAForge.exe` in the project root):
+Build (or use the prebuilt `Automonous.exe` in the project root):
 
 ```powershell
-venv\Scripts\pyinstaller.exe --onefile --windowed --name CAForge gui_console.py
+venv\Scripts\pyinstaller.exe --onefile --windowed --name Automonous gui_console.py
 ```
 
 Double-click the exe. Use the buttons to start/stop the server, open it in a browser, create backups, or restore one. The log pane tails `server.log`.
@@ -66,7 +74,7 @@ Double-click the exe. Use the buttons to start/stop the server, open it in a bro
 ### CLI console
 
 ```powershell
-venv\Scripts\pyinstaller.exe --onefile --name CAForgeConsole server_console.py
+venv\Scripts\pyinstaller.exe --onefile --name AutomonousConsole server_console.py
 ```
 
 Menu options: start, stop, status, backup, restore. Both exes must stay next to `app.py`, `venv`, and `credentials.enc` (they locate the project from their own location).
@@ -74,22 +82,18 @@ Menu options: start, stop, status, backup, restore. Both exes must stay next to 
 ## Shipping an installer (setup.exe)
 
 The project can be installed on any Windows machine as a single self-contained
-`CAForge-Setup.exe` (bundles Python, Flask, Playwright, openpyxl, cryptography,
+`Automonous-Setup.exe` (bundles Python, Flask, Playwright, openpyxl, cryptography,
 the web app, and Chromium so it works with no internet connection).
 
 1. Build the one-dir bundle:
    ```powershell
-   venv\Scripts\pyinstaller.exe --noconfirm CAForge.spec
+   venv\Scripts\pyinstaller.exe --noconfirm Automonous.spec
    ```
-2. Stage the Playwright browsers into the bundle:
+2. Compile the installer (needs [Inno Setup](https://jrsoftware.org/isinfo.php)):
    ```powershell
-   robocopy "$env:LOCALAPPDATA\ms-playwright" "dist\CAForge\_internal\browsers" /E
+   & "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" Automonous.iss
    ```
-3. Compile the installer (needs [Inno Setup](https://jrsoftware.org/isinfo.php)):
-   ```powershell
-   & "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" TaxSuite.iss
-   ```
-   Output: `installer\CAForge-Setup.exe` (~260 MB, Chromium included).
+   Output: `installer\Automonous-Setup.exe` (much smaller now that Chromium is not bundled).
 
 During setup it asks for the usual permissions: install folder, desktop
 shortcut, a Windows Firewall rule for TCP port 5000 (Administrator/UAC),
@@ -101,7 +105,7 @@ Start-up behaviour:
 - Opening the GUI console automatically starts the web server (no manual
   "Start Server" click needed).
 - The installer's start-at-logon option registers an
-  `HKCU\...\CurrentVersion\Run` entry running `CAForge.exe --serve`, so it
+  `HKCU\...\CurrentVersion\Run` entry running `Automonous.exe --serve`, so it
   appears under Windows Task Manager > Startup apps and serves the web app
   from logon.
 
@@ -110,17 +114,20 @@ The bundled app never needs the repo's `venv`:
 - `--launch` starts the server, opens the browser, and keeps running hidden as
   the server host. `--serve` runs the server hidden with no browser window
   (used by the start-at-logon option).
-- `browsers/` next to the app is used for Playwright automatically.
+- Uses the system Chrome/Edge; no `browsers/` folder is needed.
 
-## Playwright details
+## Browser engine
 
-- Uses the system-installed chromium (installed via `playwright install chromium`).
+- Drives the system-installed Google Chrome or Microsoft Edge (Edge ships with
+  Windows). No Chromium is bundled or downloaded.
+- Prefers Chrome, then Edge, then a manually located binary, then Playwright's
+  own Chromium as a last resort.
 - Bypasses the ePortal `automation-validator` "Permission Denied" anti-bot check by hiding `navigator.webdriver` (`--disable-blink-features=AutomationControlled` plus a stealth init script).
 - Handles the two-step ePortal login (User ID, then password + "confirm secure access" checkbox) and only auto-submits when no captcha is present.
 
 ## Updates
 
-- The app checks GitHub (`palashsuryavanshi/CA-Forge`) on the background for
+- The app checks GitHub (`palashsuryavanshi/Automonous`) on the background for
   the latest release.
 - When a newer version exists, the web app shows a popup on every page with a
   "Download Installer" link (shown once per browser session).
