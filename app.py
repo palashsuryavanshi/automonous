@@ -386,14 +386,18 @@ def recon_preview():
         flash("Please choose both Excel files.", "error")
         return redirect(url_for("automation_tool_page", tool_key="reconciliation"))
 
-    if not (file_a.filename.lower().endswith(".xlsx") and file_b.filename.lower().endswith(".xlsx")):
-        flash("Only .xlsx files are supported.", "error")
+    allowed_ext = {".xlsx", ".xls", ".csv"}
+    ext_a = Path(file_a.filename).suffix.lower()
+    ext_b = Path(file_b.filename).suffix.lower()
+
+    if ext_a not in allowed_ext or ext_b not in allowed_ext:
+        flash("Only .xlsx, .xls, and .csv files are supported.", "error")
         return redirect(url_for("automation_tool_page", tool_key="reconciliation"))
 
     token = uuid.uuid4().hex
     rdir = _recon_dir(token)
-    path_a = rdir / "file_a.xlsx"
-    path_b = rdir / "file_b.xlsx"
+    path_a = rdir / f"file_a{ext_a}"
+    path_b = rdir / f"file_b{ext_b}"
     file_a.save(path_a)
     file_b.save(path_b)
 

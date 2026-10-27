@@ -316,11 +316,60 @@ def read_sheet_rows(file_path, sheet_name):
     return rows
 
 
+def _file_ext(file_path):
+    return Path(file_path).suffix.lower()
+
+
 def get_sheet_names(file_path):
+    ext = _file_ext(file_path)
+    if ext == ".csv":
+        return ["CSV"]
+    if ext == ".xls":
+        import xlrd
+
+        wb = xlrd.open_workbook(file_path)
+        return list(wb.sheet_names())
     wb = load_workbook(file_path, data_only=True)
     names = list(wb.sheetnames)
     wb.close()
     return names
+
+
+def read_sheet_rows(file_path, sheet_name):
+    ext = _file_ext(file_path)
+    if ext == ".csv":
+        import csv
+
+        rows = []
+        with open(file_path, "r", encoding="utf-8-sig", newline="") as fh:
+            reader = csv.reader(fh)
+            for row in reader:
+                rows.append(list(row))
+        max_len = max((len(r) for r in rows), default=0)
+        for r in rows:
+            while len(r) < max_len:
+                r.append("")
+        return rows
+    if ext == ".xls":
+        import xlrd
+
+        wb = xlrd.open_workbook(file_path)
+        sh = wb.sheet_by_name(sheet_name)
+        rows = []
+        for i in range(sh.nrows):
+            rows.append(list(sh.row_values(i)))
+        max_len = max((len(r) for r in rows), default=0)
+        for r in rows:
+            while len(r) < max_len:
+                r.append("")
+        return rows
+    wb = load_workbook(file_path, data_only=True)
+    ws = wb[sheet_name]
+    rows = []
+    for row in ws.iter_rows(values_only=True):
+        rows.append(list(row))
+    wb.close()
+    return rows
 
 
 def rows_to_records(rows, header_row_index, mapping, date_format="auto", side="a"):
