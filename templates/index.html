@@ -2,47 +2,41 @@
 
 {% block content %}
 
-<h1 style="color:#0e4d3b;">Dashboard</h1>
+<h1>Dashboard</h1>
+<p class="page-sub">Manage credentials, automate portal logins, and run utilities — all locally.</p>
 
-<div class="grid" style="display:flex; flex-wrap:wrap; gap:20px;">
+<div class="grid" style="margin-top:20px;">
 
-    <a class="card" href="/manage"
-       style="width:280px; text-decoration:none; color:inherit;
-              border-top:5px solid #1b6a50;">
-        <h2 style="color:#1b6a50;">Manage Credentials</h2>
+    <a class="tool-card" href="/manage">
+        <div class="tool-icon">K</div>
+        <h2>Manage Credentials</h2>
         <p>Add, view, and delete saved accounts for all tax portals.</p>
-    </a>
-
-    <a class="card" href="/automation"
-       style="width:280px; text-decoration:none; color:inherit;
-              border-top:5px solid #0c8599;">
-        <h2 style="color:#0c8599;">Automation Tools</h2>
-        <p>Helpers for repetitive CA workflows (coming soon).</p>
-    </a>
-
-    <a class="card" href="/utilities"
-       style="width:280px; text-decoration:none; color:inherit;
-              border-top:5px solid #ff9800;">
-        <h2 style="color:#ff9800;">Utilities</h2>
-        <p>Calculators and converters for everyday CA tasks (coming soon).</p>
     </a>
 
     {% for tool in tools %}
 
-    <a class="card" href="/tool/{{ tool.key }}"
-       style="width:280px; text-decoration:none; color:inherit;
-              border-top:5px solid {{ tool.accent }};">
-        <h2 style="color:{{ tool.accent }};">{{ tool.name }}</h2>
+    <a class="tool-card" href="/tool/{{ tool.key }}">
+        <div class="tool-icon">T</div>
+        <h2>{{ tool.name }}</h2>
         <p>{{ tool.description }}</p>
-        <span class="badge"
-              style="background:#f0f0f0; border:1px solid #ddd;
-                     border-radius:20px; padding:4px 12px; font-size:13px;
-                     color:{{ tool.accent }};">
-            {{ tool.account_count }} saved account(s)
-        </span>
+        <span class="badge">{{ tool.account_count }} saved account(s)</span>
     </a>
 
     {% endfor %}
+
+    <a class="tool-card" href="/automation">
+        <div class="tool-icon">A</div>
+        <h2>Automation Tools</h2>
+        <p>Helpers for repetitive CA workflows.</p>
+        <span class="badge badge-muted">Open</span>
+    </a>
+
+    <a class="tool-card" href="/utilities">
+        <div class="tool-icon">U</div>
+        <h2>Utilities</h2>
+        <p>Calculators, converters, and PDF tools.</p>
+        <span class="badge badge-muted">Open</span>
+    </a>
 
 </div>
 

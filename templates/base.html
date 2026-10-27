@@ -6,230 +6,9 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
           rel="stylesheet">
-
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont,
-                         "Segoe UI", Roboto, sans-serif;
-            background: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
-
-        .layout {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        .sidebar {
-            width: 220px;
-            background: linear-gradient(180deg, #0e4d3b, #082e24);
-            color: white;
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 0;
-        }
-
-        .sidebar .brand {
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-bottom: 1px solid rgba(255,255,255,0.12);
-            text-decoration: none;
-        }
-
-        .sidebar .brand img {
-            max-width: 170px;
-            max-height: 48px;
-            object-fit: contain;
-        }
-
-        .sidebar .group-label {
-            padding: 16px 20px 6px;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #8fbcab;
-        }
-
-        .sidebar a.nav-item {
-            display: block;
-            padding: 11px 20px;
-            color: #cfe3da;
-            text-decoration: none;
-            font-size: 14px;
-        }
-
-        .sidebar a.nav-item:hover {
-            background: #15573f;
-            color: white;
-        }
-
-        .sidebar a.nav-item.active {
-            background: #1b6a50;
-            color: white;
-            border-left: 3px solid #ff9800;
-        }
-
-        .content {
-            flex: 1;
-            margin-left: 220px;
-            padding: 30px;
-        }
-
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th, td {
-            text-align: left;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 13px;
-        }
-
-        .btn-dark {
-            background: #222;
-            color: white;
-        }
-
-        .btn-danger {
-            background: #f5f5f5;
-            color: #b00;
-            border: 1px solid #dbb;
-        }
-
-        .btn-light {
-            background: #eee;
-            border: 1px solid #ccc;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-        }
-
-        label {
-            display: block;
-            margin-top: 15px;
-            font-size: 14px;
-        }
-
-        .flash {
-            padding: 10px 12px;
-            margin: 5px 0;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        .flash.success {
-            background: #e8f5e9;
-            color: #2e7d32;
-            border: 1px solid #a5d6a7;
-        }
-
-        .flash.error {
-            background: #fdecea;
-            color: #b71c1c;
-            border: 1px solid #f5c6cb;
-        }
-
-        .update-modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.45);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .update-card {
-            background: white;
-            border-radius: 12px;
-            padding: 26px 30px;
-            max-width: 420px;
-            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.3);
-            position: relative;
-        }
-
-        .update-card h3 {
-            margin: 0 0 8px;
-            color: #0e4d3b;
-            font-size: 19px;
-        }
-
-        .update-card p {
-            font-size: 14px;
-            color: #444;
-            line-height: 1.5;
-            white-space: pre-wrap;
-            max-height: 160px;
-            overflow-y: auto;
-        }
-
-        .update-card .badge-new {
-            display: inline-block;
-            background: #ff9800;
-            color: white;
-            font-size: 11px;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 12px;
-            margin-bottom: 8px;
-        }
-
-        .update-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 18px;
-        }
-
-        .update-actions .btn {
-            flex: 1;
-            text-align: center;
-            text-decoration: none;
-            padding: 10px 0;
-        }
-
-        .update-modal .close {
-            position: absolute;
-            top: 10px;
-            right: 14px;
-            font-size: 20px;
-            cursor: pointer;
-            color: #888;
-            border: none;
-            background: none;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 </head>
 
 <body>
@@ -237,45 +16,76 @@
 <div class="layout">
 
     <nav class="sidebar">
-        <a class="brand" href="/">
-            <img src="{{ url_for('static', filename='logo-name.png') }}"
-                 alt="Automonous">
-        </a>
+        <div>
+            <a class="brand" href="/">
+                <div class="brand-mark">A</div>
+                <div class="brand-text">
+                    <strong>Automonous</strong>
+                    <span>Tax Automation Portal</span>
+                </div>
+            </a>
 
-        <div class="group-label">Features</div>
+            <div class="group-label">Overview</div>
+            <a class="nav-item {% if active is none or active == 'dashboard' %}active{% endif %}"
+               href="/">
+                Dashboard
+            </a>
 
-        <a class="nav-item {% if active == 'manage' %}active{% endif %}"
-           href="/manage">
-            Manage Credentials
-        </a>
+            <div class="group-label">Features</div>
+            <a class="nav-item {% if active == 'manage' %}active{% endif %}"
+               href="/manage">
+                Manage Credentials
+            </a>
 
-        <div class="group-label">Tools</div>
+            <div class="group-label">Tools</div>
+            {% for item in TOOLS.values() %}
+            <a class="nav-item {% if active == item.key %}active{% endif %}"
+               href="/tool/{{ item.key }}">
+                {{ item.name }}
+            </a>
+            {% endfor %}
 
-        {% for item in TOOLS.values() %}
+            <div class="group-label">Automation Tools</div>
+            <a class="nav-item {% if active == 'automation' %}active{% endif %}"
+               href="/automation">
+                Automation Tools
+            </a>
 
-        <a class="nav-item {% if active == item.key %}active{% endif %}"
-           href="/tool/{{ item.key }}">
-            {{ item.name }}
-        </a>
+            <div class="group-label">Utilities</div>
+            <a class="nav-item {% if active == 'utilities' %}active{% endif %}"
+               href="/utilities">
+                Utilities
+            </a>
+        </div>
 
-        {% endfor %}
-
-        <div class="group-label">Automation Tools</div>
-
-        <a class="nav-item {% if active == 'automation' %}active{% endif %}"
-           href="/automation">
-            Automation Tools
-        </a>
-
-        <div class="group-label">Utilities</div>
-
-        <a class="nav-item {% if active == 'utilities' %}active{% endif %}"
-           href="/utilities">
-            Utilities
-        </a>
+        <div class="sidebar-footer">
+            <div class="version-pill">
+                <span>v0.3</span>
+                {% if UPDATE.available %}
+                <span style="color:#fbbf24; font-weight:700;">UPDATE</span>
+                {% else %}
+                <span style="color:#6ee7b7;">OK</span>
+                {% endif %}
+            </div>
+            <button class="console-btn" onclick="window.location.href='/automation'">
+                Open Server Console →
+            </button>
+        </div>
     </nav>
 
     <main class="content">
+        <header class="topbar">
+            <div class="crumb">
+                <strong>{{ active if active else 'Dashboard' }}</strong>
+                <span class="sep">/</span>
+                <span class="font-mono text-[11px]">Local Host :5000</span>
+            </div>
+            <span class="badge-enc">
+                <span style="width:6px;height:6px;border-radius:50%;background:#10b981;"></span>
+                Fernet AES Encryption Active
+            </span>
+        </header>
+
         {% block content %}{% endblock %}
     </main>
 
@@ -299,8 +109,8 @@
 <script>
     (function () {
         var available = {{ 'true' if UPDATE.available else 'false' }};
-        if (available && !sessionStorage.getItem('Automonous-update-seen')) {
-            sessionStorage.setItem('Automonous-update-seen', '1');
+        if (available && !sessionStorage.getItem('automonous-update-seen')) {
+            sessionStorage.setItem('automonous-update-seen', '1');
             document.getElementById('updateModal').hidden = false;
         }
     })();

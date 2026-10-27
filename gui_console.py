@@ -21,9 +21,9 @@ import updates
 
 _ANSI = re.compile(r"\033\[[0-9;]*m")
 
-COLOR_RUNNING = "#198754"
-COLOR_STALE = "#b45309"
-COLOR_STOPPED = "#6c757d"
+COLOR_RUNNING = "#10b981"
+COLOR_STALE = "#f59e0b"
+COLOR_STOPPED = "#737373"
 
 
 def _icon_path():
@@ -45,6 +45,21 @@ def _apply_icon(root):
             pass
 
 
+def _configure_style(root):
+    style = ttk.Style(root)
+    try:
+        style.theme_use("clam")
+    except Exception:
+        pass
+    style.configure(".", background="#0a0a0a", foreground="#f5f5f5", font=("Segoe UI", 10))
+    style.configure("TFrame", background="#0a0a0a")
+    style.configure("TLabel", background="#0a0a0a", foreground="#f5f5f5")
+    style.configure("TButton", background="#10b981", foreground="#0a0a0a", font=("Segoe UI", 10, "bold"), borderwidth=0, padding=8)
+    style.map("TButton", background=[("active", "#059669"), ("disabled", "#262626")], foreground=[("disabled", "#737373")])
+    style.configure("TEntry", fieldbackground="#171717", foreground="#f5f5f5", bordercolor="#3a3a3a")
+    style.configure("TCombobox", fieldbackground="#171717", foreground="#f5f5f5", bordercolor="#3a3a3a")
+
+
 class ServerConsoleGUI:
     def __init__(self, root):
         self.root = root
@@ -57,6 +72,8 @@ class ServerConsoleGUI:
         self._log_visible = False
 
         _apply_icon(root)
+        root.configure(bg="#0a0a0a")
+        _configure_style(root)
         self._build_ui()
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         self.root.after(400, self._auto_start)
@@ -121,8 +138,8 @@ class ServerConsoleGUI:
         self.log_frame = ttk.Frame(main)
         self.log_text = tk.Text(
             self.log_frame, height=8, wrap="word", state="disabled",
-            font=("Consolas", 9), bg="#111318", fg="#d7dae0",
-            insertbackground="#d7dae0",
+            font=("Consolas", 9), bg="#0a0a0a", fg="#d4d4d8",
+            insertbackground="#d4d4d8", relief="flat", bd=0,
         )
         scroll = ttk.Scrollbar(self.log_frame, command=self.log_text.yview)
         self.log_text.configure(yscrollcommand=scroll.set)
