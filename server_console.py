@@ -8,6 +8,7 @@ menu and the tkinter GUI (``gui_console.py``).
 """
 
 import os
+import shutil
 import subprocess
 import sys
 import threading
@@ -101,6 +102,33 @@ def resolve_python():
     venv_python = BASE_DIR / "venv" / "Scripts" / "python.exe"
     if venv_python.exists():
         return str(venv_python)
+
+    candidates = [
+        Path(sys.executable),
+        Path(r"E:\OpenCode Portable\apps\python\python.exe"),
+        Path(r"C:\Python311\python.exe"),
+        Path(r"C:\Program Files\Python311\python.exe"),
+    ]
+
+    found = shutil.which("python")
+    if found:
+        candidates.append(Path(found))
+
+    for candidate in candidates:
+        try:
+            if not candidate or not Path(candidate).exists():
+                continue
+            probe = subprocess.run(
+                [str(candidate), "-c", "import flask"],
+                capture_output=True,
+                timeout=10,
+                creationflags=CREATE_NO_WINDOW,
+            )
+            if probe.returncode == 0:
+                return str(candidate)
+        except Exception:
+            continue
+
     return "python"
 
 
