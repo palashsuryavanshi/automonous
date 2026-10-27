@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Reconciliation Results | Automonous{% endblock %}
+
+{% block content %}
+
+<div class="page-head">
+    <div>
+        <h1>Reconciliation results</h1>
+        <p class="page-sub">Review the summary, inspect individual records, and download the full Excel report.</p>
+    </div>
+    <a class="btn btn-dark" href="/automation/recon/download/{{ token }}">Download Excel report</a>
+</div>
+
+<div class="grid" style="margin-bottom:20px;">
+    <div class="card">
+        <h2>Total A</h2>
+        <p style="font-size:28px; color:#fff; margin:0;">{{ summary.total_a }}</p>
+    </div>
+    <div class="card">
+        <h2>Total B</h2>
+        <p style="font-size:28px; color:#fff; margin:0;">{{ summary.total_b }}</p>
+    </div>
+    <div class="card">
+        <h2>Matched</h2>
+        <p style="font-size:28px; color:#fff; margin:0;">{{ summary.matched }}</p>
+    </div>
+    <div class="card">
+        <h2>With discrepancies</h2>
+        <p style="font-size:28px; color:#fff; margin:0;">{{ summary.matched_with_discrepancies }}</p>
+    </div>
+    <div class="card">
+        <h2>Missing in A</h2>
+        <p style="font-size:28px; color:#fff; margin:0;">{{ summary.missing_in_a }}</p>
+    </div>
+    <div class="card">
+        <h2>Missing in B</h2>
+        <p style="font-size:28px; color:#fff; margin:0;">{{ summary.missing_in_b }}</p>
+    </div>
+    <div class="card">
+        <h2>Needs review</h2>
+        <p style="font-size:28px; color:#fff; margin:0;">{{ summary.needs_review }}</p>
+    </div>
+    <div class="card">
+        <h2>Duplicates</h2>
+        <p style="font-size:28px; color:#fff; margin:0;">{{ summary.duplicates }}</p>
+    </div>
+    <div class="card">
+        <h2>Reconciliation %</h2>
+        <p style="font-size:28px; color:#fff; margin:0;">{{ summary.reconciliation_percentage }}%</p>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Records (showing first 300)</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Inv A</th>
+                    <th>Inv B</th>
+                    <th>Norm A</th>
+                    <th>Norm B</th>
+                    <th>GSTIN A</th>
+                    <th>GSTIN B</th>
+                    <th>Supplier A</th>
+                    <th>Supplier B</th>
+                    <th>Value A</th>
+                    <th>Value B</th>
+                    <th>Score</th>
+                    <th>Discrepancies</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in display_rows %}
+                <tr>
+                    <td>{{ r.status }}</td>
+                    <td>{{ r.inv_a }}</td>
+                    <td>{{ r.inv_b }}</td>
+                    <td>{{ r.norm_a }}</td>
+                    <td>{{ r.norm_b }}</td>
+                    <td>{{ r.gstin_a }}</td>
+                    <td>{{ r.gstin_b }}</td>
+                    <td>{{ r.supplier_a }}</td>
+                    <td>{{ r.supplier_b }}</td>
+                    <td>{{ r.value_a }}</td>
+                    <td>{{ r.value_b }}</td>
+                    <td>{{ r.score }}</td>
+                    <td>{{ r.discrepancies }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <p class="muted" style="margin-top:10px;">Showing {{ display_rows|length }} of {{ total_results }} records. Download the Excel report for the complete dataset.</p>
+</div>
+
+<div class="card">
+    <h2>Excluded rows</h2>
+    <p>File A: {{ excluded_a|length }} excluded. File B: {{ excluded_b|length }} excluded. Details are included in the Excel report (Excluded Rows sheet).</p>
+</div>
+
+{% endblock %}

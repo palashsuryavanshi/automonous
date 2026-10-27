@@ -11,6 +11,7 @@ Credentials are stored encrypted at rest (Fernet) with an ACL-restricted key, so
 - **Encrypted credential store** - AES encryption via `cryptography` (Fernet); a backup key is kept as a fallback.
 - **Bulk import** - Load credentials from an `.xlsx` file, with a downloadable template (Portal, Username, Password).
 - **Utilities** - Local helpers, currently PDF Merger and PDF to Word (OCR).
+- **Automation Tools** - Includes the 2A/2B or R1 with Books Reconciliation Tool.
 - **Server consoles** - Two launchers to run the app and manage backups:
   - `Automonous.exe` - graphical control panel (start/stop, backup/restore, live log).
   - `AutomonousConsole.exe` - menu-driven command-line version.

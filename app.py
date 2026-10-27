@@ -1,5 +1,9 @@
+import json
 import secrets
 import sys
+import tempfile
+import uuid
+from decimal import Decimal
 from io import BytesIO
 from pathlib import Path
 
@@ -23,6 +27,16 @@ from automation_tools import AUTOMATION_TOOLS, get_automation_tool, list_automat
 from utilities import UTILITIES, get_utility, list_utilities
 from pdf_tools import OcrError, pdf_to_docx
 from pypdf import PdfReader, PdfWriter
+from recon import (
+    LOGICAL_FIELDS,
+    _clean_text,
+    auto_map,
+    create_report,
+    detect_header_row,
+    get_sheet_names,
+    read_sheet_rows,
+    reconcile,
+)
 import updates
 
 updates.start_background_refresh()
@@ -260,6 +274,10 @@ def automation_tool_page(tool_key):
     tool = get_automation_tool(tool_key)
     if not tool:
         abort(404)
+
+    if tool_key == "reconciliation":
+        return render_template("recon.html", tool=tool, active="automation")
+
     return render_template(
         "automation_tool.html",
         tool=tool,
@@ -351,6 +369,198 @@ def pdf_to_word_run():
         as_attachment=True,
         download_name=f"{filename}.docx",
     )
+
+
+def _recon_dir(token):
+    base = Path(tempfile.gettempdir()) / "automonous_recon" / token
+    base.mkdir(parents=True, exist_ok=True)
+    return base
+
+
+@app.route("/automation/recon/preview", methods=["POST"])
+def recon_preview():
+    file_a = request.files.get("file_a")
+    file_b = request.files.get("file_b")
+
+    if not file_a or not file_a.filename or not file_b or not file_b.filename:
+        flash("Please choose both Excel files.", "error")
+        return redirect(url_for("automation_tool_page", tool_key="reconciliation"))
+
+    if not (file_a.filename.lower().endswith(".xlsx") and file_b.filename.lower().endswith(".xlsx")):
+        flash("Only .xlsx files are supported.", "error")
+        return redirect(url_for("automation_tool_page", tool_key="reconciliation"))
+
+    token = uuid.uuid4().hex
+    rdir = _recon_dir(token)
+    path_a = rdir / "file_a.xlsx"
+    path_b = rdir / "file_b.xlsx"
+    file_a.save(path_a)
+    file_b.save(path_b)
+
+    sheets_a = get_sheet_names(str(path_a))
+    sheets_b = get_sheet_names(str(path_b))
+
+    sheet_a = request.form.get("sheet_a") or (sheets_a[0] if sheets_a else None)
+    sheet_b = request.form.get("sheet_b") or (sheets_b[0] if sheets_b else None)
+
+    rows_a = read_sheet_rows(str(path_a), sheet_a)
+    rows_b = read_sheet_rows(str(path_b), sheet_b)
+
+    header_a = detect_header_row(rows_a)
+    header_b = detect_header_row(rows_b)
+
+    headers_a = [_clean_text(c) for c in (rows_a[header_a] if rows_a else [])]
+    headers_b = [_clean_text(c) for c in (rows_b[header_b] if rows_b else [])]
+
+    mapping = auto_map(headers_a, headers_b)
+
+    metadata = {
+        "token": token,
+        "path_a": str(path_a),
+        "path_b": str(path_b),
+        "file_a_name": file_a.filename,
+        "file_b_name": file_b.filename,
+        "sheets_a": sheets_a,
+        "sheets_b": sheets_b,
+        "sheet_a": sheet_a,
+        "sheet_b": sheet_b,
+        "header_a": header_a,
+        "header_b": header_b,
+        "mapping": mapping,
+    }
+    (rdir / "meta.json").write_text(json.dumps(metadata))
+
+    return render_template(
+        "recon_map.html",
+        tool=get_automation_tool("reconciliation"),
+        active="automation",
+        token=token,
+        metadata=metadata,
+        headers_a=headers_a,
+        headers_b=headers_b,
+        rows_a=rows_a[:16],
+        rows_b=rows_b[:16],
+        logical_fields=LOGICAL_FIELDS,
+    )
+
+
+@app.route("/automation/recon/run", methods=["POST"])
+def recon_run():
+    token = request.form.get("token")
+    if not token:
+        flash("Session expired. Please upload the files again.", "error")
+        return redirect(url_for("automation_tool_page", tool_key="reconciliation"))
+
+    rdir = _recon_dir(token)
+    meta_path = rdir / "meta.json"
+    if not meta_path.exists():
+        flash("Session expired. Please upload the files again.", "error")
+        return redirect(url_for("automation_tool_page", tool_key="reconciliation"))
+
+    metadata = json.loads(meta_path.read_text())
+
+    sheet_a = request.form.get("sheet_a") or metadata["sheet_a"]
+    sheet_b = request.form.get("sheet_b") or metadata["sheet_b"]
+    try:
+        header_a = int(request.form.get("header_a", metadata["header_a"]))
+    except ValueError:
+        header_a = metadata["header_a"]
+    try:
+        header_b = int(request.form.get("header_b", metadata["header_b"]))
+    except ValueError:
+        header_b = metadata["header_b"]
+
+    # Rebuild mapping from form
+    mapping = {}
+    for field, label in LOGICAL_FIELDS:
+        mapping[field] = {
+            "a": request.form.get(f"map_{field}_a") or None,
+            "b": request.form.get(f"map_{field}_b") or None,
+        }
+        # keep auto if not provided
+        if mapping[field]["a"] is None and mapping[field]["b"] is None:
+            old = metadata.get("mapping", {}).get(field, {})
+            mapping[field]["a"] = old.get("a")
+            mapping[field]["b"] = old.get("b")
+
+    date_format = request.form.get("date_format", "auto")
+    try:
+        tolerance = Decimal(request.form.get("tolerance", "1"))
+    except Exception:
+        tolerance = Decimal("1")
+
+    from recon import reconcile, create_report
+
+    result = reconcile(
+        metadata["path_a"],
+        sheet_a,
+        header_a,
+        metadata["path_b"],
+        sheet_b,
+        header_b,
+        mapping,
+        date_format=date_format,
+        tolerance=tolerance,
+    )
+
+    report_path = rdir / "report.xlsx"
+    create_report(result, str(report_path))
+
+    # Store result summary only (not full rows) in meta
+    metadata["summary"] = result["summary"]
+    metadata["report"] = str(report_path)
+    metadata["sheet_a"] = sheet_a
+    metadata["sheet_b"] = sheet_b
+    metadata["header_a"] = header_a
+    metadata["header_b"] = header_b
+    metadata["mapping"] = mapping
+    meta_path.write_text(json.dumps(metadata))
+
+    # Prepare display rows (limit)
+    display_rows = []
+    for r in result["results"][:300]:
+        a = r["a"] or {}
+        b = r["b"] or {}
+        display_rows.append({
+            "inv_a": a.get("invoice_number", ""),
+            "inv_b": b.get("invoice_number", ""),
+            "norm_a": a.get("_invoice_norm", ""),
+            "norm_b": b.get("_invoice_norm", ""),
+            "gstin_a": a.get("gstin", ""),
+            "gstin_b": b.get("gstin", ""),
+            "supplier_a": a.get("supplier", ""),
+            "supplier_b": b.get("supplier", ""),
+            "date_a": a.get("invoice_date", ""),
+            "date_b": b.get("invoice_date", ""),
+            "value_a": a.get("invoice_value", ""),
+            "value_b": b.get("invoice_value", ""),
+            "row_a": a.get("_row", ""),
+            "row_b": b.get("_row", ""),
+            "score": r["score"],
+            "status": r["status"],
+            "discrepancies": "; ".join(r["discrepancies"]),
+        })
+
+    return render_template(
+        "recon_results.html",
+        tool=get_automation_tool("reconciliation"),
+        active="automation",
+        token=token,
+        summary=result["summary"],
+        display_rows=display_rows,
+        total_results=len(result["results"]),
+        excluded_a=result["excluded_a"],
+        excluded_b=result["excluded_b"],
+    )
+
+
+@app.route("/automation/recon/download/<token>")
+def recon_download(token):
+    rdir = Path(tempfile.gettempdir()) / "automonous_recon" / token
+    report = rdir / "report.xlsx"
+    if not report.exists():
+        abort(404)
+    return send_file(report, as_attachment=True, download_name="reconciliation_report.xlsx")
 
 
 if __name__ == "__main__":

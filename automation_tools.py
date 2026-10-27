@@ -9,7 +9,14 @@ definitions) lets us grow the automation surface without touching the
 credential vault.
 """
 
-AUTOMATION_TOOLS = {}
+AUTOMATION_TOOLS = {
+    "reconciliation": {
+        "key": "reconciliation",
+        "name": "2A/2B or R1 with Books Reconciliation Tool",
+        "description": "Intelligently reconcile GSTR-2A/2B or GSTR-1 invoice data against your books using fuzzy matching, invoice normalization, discrepancy detection, and downloadable Excel reports.",
+        "status": "ready",
+    },
+}
 
 
 def get_automation_tool(tool_key):

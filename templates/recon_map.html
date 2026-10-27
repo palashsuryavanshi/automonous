@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Reconciliation Mapping | Automonous{% endblock %}
+
+{% block content %}
+
+<div class="page-head">
+    <div>
+        <h1>Column mapping &amp; preview</h1>
+        <p class="page-sub">Verify the detected header rows and adjust the automatic column mapping before running the reconciliation.</p>
+    </div>
+</div>
+
+<form action="/automation/recon/run" method="POST">
+    <input type="hidden" name="token" value="{{ token }}">
+
+    <div class="grid">
+        <div class="card">
+            <h2>File A — {{ metadata.file_a_name }}</h2>
+            <label>Worksheet</label>
+            <select name="sheet_a">
+                {% for s in metadata.sheets_a %}
+                <option value="{{ s }}" {% if s == metadata.sheet_a %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Header row (0-based)</label>
+            <input type="number" name="header_a" value="{{ metadata.header_a }}" min="0">
+
+            <div class="table-wrap" style="margin-top:12px;">
+                <table>
+                    <thead>
+                        <tr>
+                            {% for h in headers_a %}
+                            <th>{{ h or '(blank)' }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows_a[metadata.header_a+1:metadata.header_a+6] %}
+                        <tr>
+                            {% for c in row %}
+                            <td>{{ c }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>File B — {{ metadata.file_b_name }}</h2>
+            <label>Worksheet</label>
+            <select name="sheet_b">
+                {% for s in metadata.sheets_b %}
+                <option value="{{ s }}" {% if s == metadata.sheet_b %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Header row (0-based)</label>
+            <input type="number" name="header_b" value="{{ metadata.header_b }}" min="0">
+
+            <div class="table-wrap" style="margin-top:12px;">
+                <table>
+                    <thead>
+                        <tr>
+                            {% for h in headers_b %}
+                            <th>{{ h or '(blank)' }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows_b[metadata.header_b+1:metadata.header_b+6] %}
+                        <tr>
+                            {% for c in row %}
+                            <td>{{ c }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+        <h2>Column mapping</h2>
+        <p>Automatic detection confidence is shown for reference. Adjust any mapping manually.</p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Logical field</th>
+                        <th>File A column</th>
+                        <th>File B column</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for field, label in logical_fields %}
+                    <tr>
+                        <td>{{ label }}</td>
+                        <td>
+                            <select name="map_{{ field }}_a">
+                                <option value="">(none)</option>
+                                {% for h in headers_a %}
+                                <option value="{{ h }}" {% if metadata.mapping[field].a == h %}selected{% endif %}>{{ h }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <select name="map_{{ field }}_b">
+                                <option value="">(none)</option>
+                                {% for h in headers_b %}
+                                <option value="{{ h }}" {% if metadata.mapping[field].b == h %}selected{% endif %}>{{ h }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+        <h2>Reconciliation options</h2>
+        <div class="grid">
+            <div>
+                <label>Date format</label>
+                <select name="date_format">
+                    <option value="auto">Auto-detect</option>
+                    <option value="dmy">DD/MM/YYYY</option>
+                    <option value="mdy">MM/DD/YYYY</option>
+                    <option value="ymd">YYYY-MM-DD</option>
+                </select>
+            </div>
+            <div>
+                <label>Amount tolerance (absolute)</label>
+                <input type="text" name="tolerance" value="1">
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button class="btn btn-dark btn-block" type="submit">Run reconciliation</button>
+        </div>
+    </div>
+</form>
+
+{% endblock %}
