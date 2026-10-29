@@ -1,5 +1,7 @@
 import json
+import re
 import secrets
+import shutil
 import sys
 import tempfile
 import uuid
@@ -383,7 +385,7 @@ def recon_preview():
     file_b = request.files.get("file_b")
 
     if not file_a or not file_a.filename or not file_b or not file_b.filename:
-        flash("Please choose both Excel files.", "error")
+        flash("Please choose both files.", "error")
         return redirect(url_for("automation_tool_page", tool_key="reconciliation"))
 
     allowed_ext = {".xlsx", ".xls", ".csv"}
@@ -394,6 +396,19 @@ def recon_preview():
         flash("Only .xlsx, .xls, and .csv files are supported.", "error")
         return redirect(url_for("automation_tool_page", tool_key="reconciliation"))
 
+    if file_a.content_length and file_a.content_length > 50 * 1024 * 1024:
+        flash("File A is too large (max 50 MB).", "error")
+        return redirect(url_for("automation_tool_page", tool_key="reconciliation"))
+
+    # Cleanup old sessions
+    base = Path(tempfile.gettempdir()) / "automonous_recon"
+    if base.exists():
+        import time as _t
+        now = _t.time()
+        for d in base.iterdir():
+            if d.is_dir() and (now - d.stat().st_mtime) > 86400:
+                shutil.rmtree(d, ignore_errors=True)
+
     token = uuid.uuid4().hex
     rdir = _recon_dir(token)
     path_a = rdir / f"file_a{ext_a}"
@@ -401,22 +416,22 @@ def recon_preview():
     file_a.save(path_a)
     file_b.save(path_b)
 
-    sheets_a = get_sheet_names(str(path_a))
-    sheets_b = get_sheet_names(str(path_b))
-
-    sheet_a = request.form.get("sheet_a") or (sheets_a[0] if sheets_a else None)
-    sheet_b = request.form.get("sheet_b") or (sheets_b[0] if sheets_b else None)
-
-    rows_a = read_sheet_rows(str(path_a), sheet_a)
-    rows_b = read_sheet_rows(str(path_b), sheet_b)
-
-    header_a = detect_header_row(rows_a)
-    header_b = detect_header_row(rows_b)
-
-    headers_a = [_clean_text(c) for c in (rows_a[header_a] if rows_a else [])]
-    headers_b = [_clean_text(c) for c in (rows_b[header_b] if rows_b else [])]
-
-    mapping = auto_map(headers_a, headers_b)
+    try:
+        sheets_a = get_sheet_names(str(path_a))
+        sheets_b = get_sheet_names(str(path_b))
+        sheet_a = request.form.get("sheet_a") or (sheets_a[0] if sheets_a else None)
+        sheet_b = request.form.get("sheet_b") or (sheets_b[0] if sheets_b else None)
+        rows_a = read_sheet_rows(str(path_a), sheet_a)
+        rows_b = read_sheet_rows(str(path_b), sheet_b)
+        header_a = detect_header_row(rows_a)
+        header_b = detect_header_row(rows_b)
+        headers_a = [_clean_text(c) for c in (rows_a[header_a] if rows_a else [])]
+        headers_b = [_clean_text(c) for c in (rows_b[header_b] if rows_b else [])]
+        mapping = auto_map(headers_a, headers_b)
+    except Exception:
+        flash("Could not read the uploaded workbook. Please check the file format.", "error")
+        shutil.rmtree(rdir, ignore_errors=True)
+        return redirect(url_for("automation_tool_page", tool_key="reconciliation"))
 
     metadata = {
         "token": token,
@@ -451,7 +466,7 @@ def recon_preview():
 @app.route("/automation/recon/run", methods=["POST"])
 def recon_run():
     token = request.form.get("token")
-    if not token:
+    if not token or not re.fullmatch(r"[a-f0-9]{32}", token):
         flash("Session expired. Please upload the files again.", "error")
         return redirect(url_for("automation_tool_page", tool_key="reconciliation"))
 
@@ -495,20 +510,28 @@ def recon_run():
 
     from recon import reconcile, create_report
 
-    result = reconcile(
-        metadata["path_a"],
-        sheet_a,
-        header_a,
-        metadata["path_b"],
-        sheet_b,
-        header_b,
-        mapping,
-        date_format=date_format,
-        tolerance=tolerance,
-    )
+    try:
+        result = reconcile(
+            metadata["path_a"],
+            sheet_a,
+            header_a,
+            metadata["path_b"],
+            sheet_b,
+            header_b,
+            mapping,
+            date_format=date_format,
+            tolerance=tolerance,
+        )
+    except Exception:
+        flash("Reconciliation failed. Please check the file contents and try again.", "error")
+        return redirect(url_for("automation_tool_page", tool_key="reconciliation"))
 
-    report_path = rdir / "report.xlsx"
-    create_report(result, str(report_path))
+    try:
+        report_path = rdir / "report.xlsx"
+        create_report(result, str(report_path))
+    except Exception:
+        flash("Could not generate the Excel report.", "error")
+        return redirect(url_for("automation_tool_page", tool_key="reconciliation"))
 
     # Store result summary only (not full rows) in meta
     metadata["summary"] = result["summary"]
@@ -560,12 +583,21 @@ def recon_run():
 
 @app.route("/automation/recon/download/<token>")
 def recon_download(token):
+    if not re.fullmatch(r"[a-f0-9]{32}", token):
+        abort(404)
+
     rdir = Path(tempfile.gettempdir()) / "automonous_recon" / token
     report = rdir / "report.xlsx"
     if not report.exists():
         abort(404)
+
+    @app.after_this_request
+    def cleanup(response):
+        shutil.rmtree(rdir, ignore_errors=True)
+        return response
+
     return send_file(report, as_attachment=True, download_name="reconciliation_report.xlsx")
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    app.run(host="127.0.0.1", port=5000, debug=False)

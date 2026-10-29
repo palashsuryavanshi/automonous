@@ -133,6 +133,7 @@ def _remove_legacy_key():
 def save_credentials(store):
     f = Fernet(get_key())
     DATA_FILE.write_bytes(f.encrypt(json.dumps(store).encode()))
+    _restrict_windows_access(DATA_FILE)
 
 
 def add_credential(tool_key, username, password):

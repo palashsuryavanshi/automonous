@@ -794,6 +794,11 @@ def create_report(recon_result, output_path):
         ws.append([k, v])
 
     # Helper to write result rows
+    def _safe(v):
+        if isinstance(v, str) and v and v[0] in ("=", "+", "-", "@"):
+            return "'" + v
+        return v
+
     def result_rows(status_filter=None):
         out = []
         for r in results:
@@ -802,16 +807,16 @@ def create_report(recon_result, output_path):
             a = r["a"] or {}
             b = r["b"] or {}
             out.append([
-                a.get("invoice_number", ""),
-                b.get("invoice_number", ""),
-                a.get("_invoice_norm", ""),
-                b.get("_invoice_norm", ""),
-                a.get("gstin", ""),
-                b.get("gstin", ""),
-                a.get("supplier", ""),
-                b.get("supplier", ""),
-                a.get("invoice_date", ""),
-                b.get("invoice_date", ""),
+                _safe(a.get("invoice_number", "")),
+                _safe(b.get("invoice_number", "")),
+                _safe(a.get("_invoice_norm", "")),
+                _safe(b.get("_invoice_norm", "")),
+                _safe(a.get("gstin", "")),
+                _safe(b.get("gstin", "")),
+                _safe(a.get("supplier", "")),
+                _safe(b.get("supplier", "")),
+                _safe(a.get("invoice_date", "")),
+                _safe(b.get("invoice_date", "")),
                 a.get("taxable_value", ""),
                 b.get("taxable_value", ""),
                 a.get("igst", ""),
@@ -827,8 +832,8 @@ def create_report(recon_result, output_path):
                 a.get("_row", ""),
                 b.get("_row", ""),
                 r["score"],
-                r["status"],
-                "; ".join(r["discrepancies"]),
+                _safe(r["status"]),
+                _safe("; ".join(r["discrepancies"])),
             ])
         return out
 
@@ -882,9 +887,9 @@ def create_report(recon_result, output_path):
     ws = wb.create_sheet("Excluded Rows")
     ws.append(["File", "Row", "Reason"])
     for e in recon_result["excluded_a"]:
-        ws.append(["File A", e["row"], e["reason"]])
+        ws.append(["File A", e["row"], _safe(e["reason"])])
     for e in recon_result["excluded_b"]:
-        ws.append(["File B", e["row"], e["reason"]])
+        ws.append(["File B", e["row"], _safe(e["reason"])])
 
     # Audit log
     ws = wb.create_sheet("Audit Log")
